@@ -13,7 +13,9 @@ from pyarrow.parquet import ParquetWriter
 _today_budget_year: str = str(get_budget_year())
 
 
-def path_tmpdb(prefix_name: str, hospcode: str, budget_year: Union[str, int] = _today_budget_year) -> str:
+def path_tmpdb(
+    prefix_name: str, hospcode: str, budget_year: Union[str, int] = _today_budget_year
+) -> str:
     """
     Return path of {prefix_name}_{hospcode}_{budget_year}.parquet file
 
@@ -39,7 +41,12 @@ def path_tmpdb(prefix_name: str, hospcode: str, budget_year: Union[str, int] = _
     return path_file
 
 
-def read_tmpdb(prefix_name: str, hospcode: str, budget_year: Union[str, int] = _today_budget_year, columns: list = None):
+def read_tmpdb(
+    prefix_name: str,
+    hospcode: str,
+    budget_year: Union[str, int] = _today_budget_year,
+    columns: list = None,
+):
     """
     Read {prefix_name}_{hospcode}_{budget_year}.parquet file and return DataFrame
 
@@ -54,10 +61,16 @@ def read_tmpdb(prefix_name: str, hospcode: str, budget_year: Union[str, int] = _
     path_file: str = path_tmpdb(prefix_name, hospcode, budget_year)
     if os.path.exists(path_file) == False:
         return DataFrame()
-    return pd.read_parquet(path_file, engine='pyarrow', dtype_backend='pyarrow', columns=columns)
+    return pd.read_parquet(
+        path_file, engine="pyarrow", dtype_backend="pyarrow", columns=columns
+    )
 
 
-def read_person_db(hospcode: str, budget_year: Union[str, int] = _today_budget_year, columns: list = None) -> DataFrame:
+def read_person_db(
+    hospcode: str,
+    budget_year: Union[str, int] = _today_budget_year,
+    columns: list = None,
+) -> DataFrame:
     """
     Read t_person_db_{hospcode}_{budget_year}.parquet file and return DataFrame
 
@@ -69,10 +82,19 @@ def read_person_db(hospcode: str, budget_year: Union[str, int] = _today_budget_y
     Returns:
         df (DataFrame): DataFrame person_db
     """
-    return read_tmpdb(prefix_name="t_person_db", hospcode=hospcode, budget_year=budget_year, columns=columns)
+    return read_tmpdb(
+        prefix_name="t_person_db",
+        hospcode=hospcode,
+        budget_year=budget_year,
+        columns=columns,
+    )
 
 
-def read_person_cid(hospcode: str,  budget_year: Union[str, int] = _today_budget_year, columns: list = None,) -> DataFrame:
+def read_person_cid(
+    hospcode: str,
+    budget_year: Union[str, int] = _today_budget_year,
+    columns: list = None,
+) -> DataFrame:
     """
     Read t_person_db_{hospcode}_{budget_year}.parquet file and filter unique CID
 
@@ -88,8 +110,7 @@ def read_person_cid(hospcode: str,  budget_year: Union[str, int] = _today_budget
     cols = columns
     if not cols is None and "CK_CID" not in cols:
         cols.append("CK_CID")
-    df = read_person_db(hospcode=hospcode, columns=cols,
-                        budget_year=budget_year)
+    df = read_person_db(hospcode=hospcode, columns=cols, budget_year=budget_year)
     if df.empty:
         return df
     if columns is None:
@@ -97,7 +118,11 @@ def read_person_cid(hospcode: str,  budget_year: Union[str, int] = _today_budget
     return df.loc[df["CK_CID"] > 0, columns]
 
 
-def read_tmpdb_all(prefix_name: str, budget_year: Union[str, int] = _today_budget_year, columns: list = None):
+def read_tmpdb_all(
+    prefix_name: str,
+    budget_year: Union[str, int] = _today_budget_year,
+    columns: list = None,
+):
     """
     Read {prefix_name}_*_{budget_year}.parquet file and return DataFrame
 
@@ -108,21 +133,37 @@ def read_tmpdb_all(prefix_name: str, budget_year: Union[str, int] = _today_budge
     Returns:
         df (DataFrame): DataFrame
     """
-    conf = get_conf()
+    conf: ConfigParser = get_conf()
+
+    file: str = path_tmpdb(prefix_name, "_all_", budget_year)
+    if os.path.exists(file):
+        return pd.read_parquet(
+            file, engine="pyarrow", dtype_backend="pyarrow", columns=columns
+        )
     dir_storage = conf.get("storage", "tmpdb")
     path_search = os.path.join(
-        dir_storage, budget_year, prefix_name, f"{prefix_name}_*_{budget_year}.parquet")
+        dir_storage, budget_year, prefix_name, f"{prefix_name}_*_{budget_year}.parquet"
+    )
     list_files = glob(path_search)
     if len(list_files) == 0:
         return DataFrame()
     df = pd.DataFrame()
     for file in list_files:
-        df = pd.concat([df, pd.read_parquet(file, engine='pyarrow',
-                       dtype_backend='pyarrow', columns=columns)], ignore_index=True)
+        df: DataFrame = pd.concat(
+            [
+                df,
+                pd.read_parquet(
+                    file, engine="pyarrow", dtype_backend="pyarrow", columns=columns
+                ),
+            ],
+            ignore_index=True,
+        )
     return df
 
 
-def to_parquet(df: DataFrame, pqwriter: ParquetWriter, filepath: str = None, compression='snappy') -> Optional[ParquetWriter]:
+def to_parquet(
+    df: DataFrame, pqwriter: ParquetWriter, filepath: str = None, compression="snappy"
+) -> Optional[ParquetWriter]:
     """
     Write DataFrame to parquet file
 
@@ -143,8 +184,7 @@ def to_parquet(df: DataFrame, pqwriter: ParquetWriter, filepath: str = None, com
 
     table: pa.Table = pa.Table.from_pandas(df, preserve_index=False)
     if pqwriter is None and filepath is not None:
-        pqwriter = ParquetWriter(
-            filepath, table.schema, compression=compression)
+        pqwriter = ParquetWriter(filepath, table.schema, compression=compression)
         pqwriter.write_table(table)
     else:
         pqwriter.write_table(table)
