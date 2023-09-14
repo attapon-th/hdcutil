@@ -37,7 +37,9 @@ def check_mod11(cid: str) -> bool:
     Returns:
         bool: True if valid else False
     """
-    if pd.isna(cid) or len(cid) != 13 or not cid.isnumeric():  # ถ้า pid ไม่ใช่ 13 ให้คืนค่า False
+    if (
+        pd.isna(cid) or len(cid) != 13 or not cid.isnumeric()
+    ):  # ถ้า pid ไม่ใช่ 13 ให้คืนค่า False
         return False
 
     cid12 = cid[0:12]  # ตัวเลขหลักที่ 1 - 12 ของบัตรประชาชน
@@ -66,76 +68,21 @@ def read_lookup(name: str, *, columns: list[str] = None) -> DataFrame:
     s3_obj = dict(conf.items("s3_lookup"))
     bucket = s3_obj.pop("bucket").strip("/")
     prefix = s3_obj.pop("prefix").strip("/")
-    s3_obj['anon'] = s3_obj['anon'].lower() == 'true'
+    s3_obj["anon"] = s3_obj["anon"].lower() == "true"
     s3_file: str = f"s3://{bucket}/{prefix}/{name}.parquet"
 
     try:
-
         df: DataFrame = pd.read_parquet(
-            s3_file, engine="pyarrow", dtype_backend="pyarrow", storage_options=s3_obj, columns=columns)
+            s3_file,
+            engine="pyarrow",
+            dtype_backend="pyarrow",
+            storage_options=s3_obj,
+            columns=columns,
+        )
         df.columns = df.columns.str.upper()
         return df
     except Exception as e:
         return pd.DataFrame()
-
-
-def cal_birth_with_date(df: DataFrame, date_cal: np.datetime64(), col_birth: str, scalar: str = "Y") -> Series:
-    """
-    Calculate age from  column birth and static date (date_cal)
-
-    Args:
-        df (DataFrame): DataFrame
-        date_cal (np.datetime64): date for calculate age
-        col_birth (str): column name of birth
-        scalar (str): scalar (default: "Y") (Y, M, D, W, h, m, s, ms, us, ns)
-
-    Returns:
-        sr (Series): Series of age
-    """
-
-    # check type of column date and column birth
-    dtype_name = df[col_birth].dtype.name
-    if not dtype_name.startswith('datetime64') or dtype_name.endswith("[pyarrow]"):
-        df[col_birth] = pd.to_datetime(df[col_birth],  errors='coerce')
-
-    df = df.loc[~df[col_birth].isna()]
-    df = df.loc[(df[col_birth] <= date_cal)]
-    df = df.loc[(df[col_birth] > np.datetime64('1900-01-01'))]
-
-    sr = ((date_cal - df[col_birth]) / np.timedelta64(1, scalar))
-    sr = sr.fillna(-9999).astype("int64")
-    return sr
-
-
-def cal_birth_with_column_date(df: DataFrame, col_date: str, col_birth: str, scalar: str = "Y") -> Series:
-    """
-    Calculate age from column birth and column date
-
-    Args:
-        df (DataFrame): DataFrame
-        col_date (str): column name of date
-        col_birth (str): column name of birth
-        scalar (str): scalar (default: "Y") (Y, M, D, W, h, m, s, ms, us, ns)
-
-    Returns:
-        sr (Series): Series of age
-    """
-
-    # check type of column date and column birth
-    dtype_name = df[col_birth].dtype.name
-    if not dtype_name.startswith('datetime64') or dtype_name.endswith("[pyarrow]"):
-        df[col_birth] = pd.to_datetime(df[col_birth])
-
-    # check type of column date and column for calculate age
-    dtype_name = df[col_date].dtype.name
-    if not dtype_name.startswith('datetime64') or dtype_name.endswith("[pyarrow]"):
-        df[col_date] = pd.to_datetime(df[col_date])
-
-    df = df.loc[~df[col_birth].isna()]
-
-    sr = ((df[col_date] - df[col_birth]) / np.timedelta64(1, scalar))
-    sr = sr.fillna(-9999).astype("int64")
-    return sr
 
 
 def df_trim_space(df: DataFrame) -> DataFrame:
@@ -148,6 +95,6 @@ def df_trim_space(df: DataFrame) -> DataFrame:
     Returns:
         df (DataFrame): DataFrame
     """
-    cols = df.select_dtypes(['string[pyarrow]', 'string', 'object']).columns
+    cols = df.select_dtypes(["string[pyarrow]", "string", "object"]).columns
     df[cols] = df[cols].apply(lambda x: x.str.strip())
     return df
