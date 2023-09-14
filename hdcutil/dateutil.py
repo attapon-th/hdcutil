@@ -29,7 +29,8 @@ def datediff(
         to_dt = pa.scalar(to_dt, type=pa.timestamp(fr_dt.type.unit))
     elif isinstance(to_dt, date):
         to_dt = pa.scalar(
-            datetime.fromisoformat(date.isoformat()), type=pa.timestamp(fr_dt.type.unit)
+            datetime.fromisoformat(to_dt.isoformat()),
+            type=pa.timestamp(fr_dt.type.unit),
         )
     else:
         to_dt = pa.array(to_dt, type=pa.timestamp(fr_dt.type.unit))
