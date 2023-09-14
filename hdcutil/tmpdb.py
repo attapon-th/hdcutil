@@ -119,46 +119,42 @@ def read_person_cid(
 
 
 def read_tmpdb_all(
-    prefix_name: str,
+    prefix: str,
     budget_year: Union[str, int] = _today_budget_year,
     columns: list = None,
-):
+) -> pd.DataFrame:
     """
-    Read {prefix_name}_*_{budget_year}.parquet file and return DataFrame
+    Reads data from a temporary database file with a specified prefix and budget year.
 
-    Args:
-        prefix_name (str): prefix name (ex. t_person_db)
-        budget_year (str): budget year (default: current budget year)
-        columns (list): list of columns to read
+    Parameters:
+        prefix (str): The prefix of the database file.
+        budget_year (Union[str, int], optional): The budget year to read data from. Defaults to the current budget year.
+        columns (list, optional): The list of columns to read from the database file. Defaults to None, which reads all columns.
+
     Returns:
-        df (DataFrame): DataFrame
-    """
-    conf: ConfigParser = get_conf()
+        pd.DataFrame: The data read from the database file as a pandas DataFrame.
 
-    file: str = path_tmpdb(prefix_name, "_all_", budget_year)
-    if os.path.exists(file):
+    """
+    conf = get_conf()
+    file_path = path_tmpdb(prefix, "_all_", budget_year)
+
+    if os.path.exists(file_path):
         return pd.read_parquet(
+            file_path, engine="pyarrow", dtype_backend="pyarrow", columns=columns
+        )
+
+    dir_storage = conf.get("storage", "tmpdb")
+    search_pattern = os.path.join(
+        dir_storage, budget_year, prefix, f"{prefix}_*_{budget_year}.parquet"
+    )
+    list_files = glob(search_pattern)
+    df_list: list[DataFrame] = [
+        pd.read_parquet(
             file, engine="pyarrow", dtype_backend="pyarrow", columns=columns
         )
-    dir_storage = conf.get("storage", "tmpdb")
-    path_search = os.path.join(
-        dir_storage, budget_year, prefix_name, f"{prefix_name}_*_{budget_year}.parquet"
-    )
-    list_files = glob(path_search)
-    if len(list_files) == 0:
-        return DataFrame()
-    df = pd.DataFrame()
-    for file in list_files:
-        df: DataFrame = pd.concat(
-            [
-                df,
-                pd.read_parquet(
-                    file, engine="pyarrow", dtype_backend="pyarrow", columns=columns
-                ),
-            ],
-            ignore_index=True,
-        )
-    return df
+        for file in list_files
+    ]
+    return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
 
 def to_parquet(
