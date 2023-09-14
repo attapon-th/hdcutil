@@ -30,7 +30,7 @@ def get_conf(filepath: str = DEFAULT_CONFIG_FILE, force: bool = False) -> Config
     return conf
 
 
-def conf_s3() -> [dict, str]:
+def conf_s3(section: str = "s3") -> [dict, str]:
     """
     Read S3 section of config.ini file and return dictionary of S3 credentials
 
@@ -42,6 +42,6 @@ def conf_s3() -> [dict, str]:
         bucket (str): name of S3 bucket
     """
     conf: ConfigParser = get_conf()
-    s3 = dict(conf["S3"])
+    s3 = dict(conf[section])
     bucket: str = s3.pop("bucket")
     return s3, bucket
