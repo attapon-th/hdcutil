@@ -7,69 +7,6 @@ import numpy as np
 import pyarrow as pa
 
 
-def cal_birth_with_date(
-    df: DataFrame, date_cal: np.datetime64(), col_birth: str, scalar: str = "Y"
-) -> Series:
-    """
-    Calculate age from  column birth and static date (date_cal)
-
-    Args:
-        df (DataFrame): DataFrame
-        date_cal (np.datetime64): date for calculate age
-        col_birth (str): column name of birth
-        scalar (str): scalar (default: "Y") (Y, M, D, W, h, m, s, ms, us, ns)
-
-    Returns:
-        sr (Series): Series of age
-    """
-
-    # check type of column date and column birth
-    dtype_name = df[col_birth].dtype.name
-    if not dtype_name.startswith("datetime64") or dtype_name.endswith("[pyarrow]"):
-        df[col_birth] = pd.to_datetime(df[col_birth], errors="coerce")
-
-    df = df.loc[~df[col_birth].isna()]
-    df = df.loc[(df[col_birth] <= date_cal)]
-    df = df.loc[(df[col_birth] > np.datetime64("1900-01-01"))]
-
-    sr = (date_cal - df[col_birth]) / np.timedelta64(1, scalar)
-    sr = sr.fillna(-9999).astype("int64")
-    return sr
-
-
-def cal_birth_with_column_date(
-    df: DataFrame, col_date: str, col_birth: str, scalar: str = "Y"
-) -> Series:
-    """
-    Calculate age from column birth and column date
-
-    Args:
-        df (DataFrame): DataFrame
-        col_date (str): column name of date
-        col_birth (str): column name of birth
-        scalar (str): scalar (default: "Y") (Y, M, D, W, h, m, s, ms, us, ns)
-
-    Returns:
-        sr (Series): Series of age
-    """
-
-    # check type of column date and column birth
-    dtype_name = df[col_birth].dtype.name
-    if not dtype_name.startswith("datetime64") or dtype_name.endswith("[pyarrow]"):
-        df[col_birth] = pd.to_datetime(df[col_birth])
-
-    # check type of column date and column for calculate age
-    dtype_name = df[col_date].dtype.name
-    if not dtype_name.startswith("datetime64") or dtype_name.endswith("[pyarrow]"):
-        df[col_date] = pd.to_datetime(df[col_date])
-
-    df = df.loc[~df[col_birth].isna()]
-
-    sr = (df[col_date] - df[col_birth]) / np.timedelta64(1, scalar)
-    sr = sr.fillna(-9999).astype("int64")
-    return sr
-
-
 def datediff(
     from_series: Series,
     to_dt: Union[Series, np.datetime64, date, datetime],
@@ -79,10 +16,12 @@ def datediff(
     Calculate age from column birth and column date
 
     Args:
-        scalar (str): scalar (default: "Y") (Y, M, D, W, h, m, s, ms, us, ns)
+        from_series (Series): Series of birth (Ex: df["birth"])
+        to_dt (Union[Series, np.datetime64, date, datetime]): Series or scalar of date (Ex: df["date"] or datetime.now())
+        scalar (str): scalar (default: "Y") (Y, M, D, W, h, m, s, ms)
 
     Returns:
-        sr (Series): Series of age
+        sr (Series): Series of age (type int64)
     """
 
     fr_dt: pa.Array = pa.array(from_series, type=pa.timestamp("s"))

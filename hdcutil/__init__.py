@@ -11,7 +11,7 @@ from .tmpdb import (
     read_tmpdb_all,
     to_parquet,
 )
-from .dateutil import cal_birth_with_column_date, cal_birth_with_date, datediff
+from .dateutil import datediff
 
 __all__ = [
     "config",
@@ -21,8 +21,6 @@ __all__ = [
     "get_budget_year",
     "check_mod11",
     "read_lookup",
-    "cal_birth_with_column_date",
-    "cal_birth_with_date",
     "path_tmpdb",
     "read_tmpdb",
     "read_person_db",
