@@ -20,7 +20,7 @@ def datediff(from_series: Series, to_dt: _T_DATETIME, scalar: str = "Y",) -> Ser
     Returns:
         sr (Series): Series of age (type int64)
     """
-
+    from_series = from_series.astype('timestamp[s][pyarrow]')
     fr_dt: pa.Array = pa.array(from_series, type=pa.timestamp("s"))
     if isinstance(to_dt, datetime):
         to_dt = pa.scalar(to_dt, type=pa.timestamp(fr_dt.type.unit))
