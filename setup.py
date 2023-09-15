@@ -15,7 +15,7 @@ def list_files(directory):
 
 setup(
     name="hdcutil",
-    version="0.2.3",
+    version="0.2.4",
     author="attapon.th",
     maintainer="attapon.th",
     maintainer_email="attapon.4work@gmial.com",

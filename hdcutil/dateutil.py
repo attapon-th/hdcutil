@@ -30,8 +30,8 @@ def datediff(from_series: Series, to_dt: _T_DATETIME, scalar: str = "Y",) -> Ser
             type=pa.timestamp(fr_dt.type.unit),
         )
     else:
-        to_dt = pa.array(to_dt, type=pa.timestamp(fr_dt.type.unit))
-    to_dt = pa.array(to_dt.to_pandas, type=pa.timestamp(fr_dt.type.unit))
+        to_dt = pa.array(to_dt.astype(f"timestamp[{fr_dt.type.unit}][pyarrow]"), type=pa.timestamp(fr_dt.type.unit))
+
     if scalar == "Y":
         sr: Series = pa.compute.years_between(fr_dt, to_dt)
     elif scalar == "M":
