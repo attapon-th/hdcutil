@@ -6,6 +6,14 @@ from pyarrow.parquet import ParquetWriter
 class ParquetWR(ParquetWriter):
 
     def __init__(self, filename: str, compression: str = 'snappy'):
+        """
+        Initialize a ParquetWriter object.
+
+        Args:
+            filename (str): The name of the Parquet file to be written.
+            compression (str): The compression algorithm to use.
+        """
+
         self.filename: str = filename
         self.compression: str = compression
         self.is_start: bool = False
@@ -23,4 +31,21 @@ class ParquetWR(ParquetWriter):
         table: pa.Table = pa.Table.from_pandas(df, preserve_index=False)
         if self.is_start == False:
             super().__init__(self.filename, table.schema, compression=self.compression)
+            self.is_start = True
         return super().write_table(table)
+
+    def close(self):
+        """
+        Closes the object.
+
+        This method is called to close the object. If the object is currently in the 'start' state, it calls the superclass' close method and sets the 'is_start' flag to False.
+
+        Parameters:
+        - None
+
+        Returns:
+        - None
+        """
+        if self.is_start:
+            super().close()
+            self.is_start = False
