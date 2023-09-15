@@ -12,7 +12,7 @@ from .tmpdb import (
     to_parquet,
 )
 from .dateutil import datediff
-from ParquetWriter import PaquetWR
+from .ParquetWriter import PaquetWR
 
 __all__ = [
     "config",
