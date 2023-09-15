@@ -3,7 +3,7 @@ import pyarrow as pa
 from pyarrow.parquet import ParquetWriter
 
 
-class PaquetWR(ParquetWriter):
+class ParquetWR(ParquetWriter):
 
     def __init__(self, filename: str, compression: str = 'snappy'):
         self.filename: str = filename

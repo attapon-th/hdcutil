@@ -12,7 +12,7 @@ from .tmpdb import (
     to_parquet,
 )
 from .dateutil import datediff
-from .ParquetWriter import PaquetWR
+from .ParquetWriter import ParquetWR
 
 __all__ = [
     "config",
@@ -30,5 +30,5 @@ __all__ = [
     "to_parquet",
     "df_trim_space",
     "datediff",
-    "PaquetWR",
+    "ParquetWR",
 ]
