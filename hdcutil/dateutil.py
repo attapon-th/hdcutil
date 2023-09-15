@@ -20,8 +20,8 @@ def datediff(from_series: Series, to_dt: _T_DATETIME, scalar: str = "Y",) -> Ser
     Returns:
         sr (Series): Series of age (type int64)
     """
-    from_series = from_series.astype('timestamp[s][pyarrow]')
-    fr_dt: pa.Array = pa.array(from_series, type=pa.timestamp("s"))
+    from_series = from_series.astype('timestamp[ns][pyarrow]')
+    fr_dt: pa.Array = pa.array(from_series, type=pa.timestamp("ns"))
     if isinstance(to_dt, datetime):
         to_dt = pa.scalar(to_dt, type=pa.timestamp(fr_dt.type.unit))
     elif isinstance(to_dt, date):
@@ -31,7 +31,7 @@ def datediff(from_series: Series, to_dt: _T_DATETIME, scalar: str = "Y",) -> Ser
         )
     else:
         to_dt = pa.array(to_dt, type=pa.timestamp(fr_dt.type.unit))
-
+    to_dt = pa.array(to_dt.to_pandas, type=pa.timestamp(fr_dt.type.unit))
     if scalar == "Y":
         sr: Series = pa.compute.years_between(fr_dt, to_dt)
     elif scalar == "M":
