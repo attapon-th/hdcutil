@@ -1,17 +1,14 @@
 from __future__ import print_function, division, absolute_import
-from datetime import datetime, date, time
-from typing import Union, Optional
-import pandas as pd
-from pandas import DataFrame, Series
+from datetime import datetime, date
+from typing import Union
+from pandas import Series
 import numpy as np
 import pyarrow as pa
 
+_T_DATETIME = Union[Series, np.datetime64, date, datetime]
 
-def datediff(
-    from_series: Series,
-    to_dt: Union[Series, np.datetime64, date, datetime],
-    scalar: str = "Y",
-) -> Series:
+
+def datediff(from_series: Series, to_dt: _T_DATETIME, scalar: str = "Y",) -> Series:
     """
     Calculate age from column birth and column date
 

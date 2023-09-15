@@ -1,6 +1,6 @@
 from __future__ import print_function, division, absolute_import
 
-from . import config, util, tmpdb, dateutil
+from . import config, util, tmpdb, dateutil, ParquetWriter
 from .config import conf_s3, get_conf
 from .util import get_budget_year, check_mod11, read_lookup, df_trim_space
 from .tmpdb import (
@@ -12,6 +12,7 @@ from .tmpdb import (
     to_parquet,
 )
 from .dateutil import datediff
+from ParquetWriter import PaquetWR
 
 __all__ = [
     "config",
@@ -29,4 +30,5 @@ __all__ = [
     "to_parquet",
     "df_trim_space",
     "datediff",
+    "PaquetWR",
 ]
