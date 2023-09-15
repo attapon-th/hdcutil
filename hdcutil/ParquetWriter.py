@@ -1,11 +1,12 @@
 from pandas import DataFrame
 import pyarrow as pa
 from pyarrow.parquet import ParquetWriter
+from sqlalchemy import table
 
 
-class ParquetWR(ParquetWriter):
+class ParquetWR():
 
-    def __init__(self, filename: str, compression: str = 'snappy'):
+    def __init__(self, filename: str, compression: str = 'snappy', *, schema: pa.Schema = None,):
         """
         Initialize a ParquetWriter object.
 
@@ -13,12 +14,17 @@ class ParquetWR(ParquetWriter):
             filename (str): The name of the Parquet file to be written.
             compression (str): The compression algorithm to use.
         """
-
+        self.__pqwr: ParquetWriter
         self.filename: str = filename
         self.compression: str = compression
         self.is_start: bool = False
+        self.schema: pa.Schema = None
+        if schema is not None:
+            self.schema: pa.Schema = schema
+            self.__pqwr = ParquetWriter(self.filename, self.schema, compression=self.compression)
+            self.is_start: bool = True
 
-    def write_table(self, df: DataFrame):
+    def write(self, df: DataFrame):
         """
         Writes a given DataFrame to a Parquet file using the Arrow library.
 
@@ -28,11 +34,20 @@ class ParquetWR(ParquetWriter):
         Returns:
             bool: True if the DataFrame was successfully written to the file, False otherwise.
         """
-        table: pa.Table = pa.Table.from_pandas(df, preserve_index=False)
-        if self.is_start == False:
-            super().__init__(self.filename, table.schema, compression=self.compression)
+        if not isinstance(df, DataFrame) or df.empty:
+            # print("df is not a DataFrame or is empty")
+            return self
+
+        table = pa.Table.from_pandas(df, preserve_index=False)
+
+        if not self.is_start:
+            self.schema = table.schema
+            # print("Creating Parquet Writer")
+            self.__pqwr = ParquetWriter(self.filename, self.schema, compression=self.compression)
             self.is_start = True
-        return super().write_table(table)
+        # print("Writing to Parquet")
+        self.__pqwr.write_table(table)
+        return self
 
     def close(self):
         """
@@ -47,5 +62,5 @@ class ParquetWR(ParquetWriter):
         - None
         """
         if self.is_start:
-            super().close()
+            self.__pqwr.close()
             self.is_start = False
