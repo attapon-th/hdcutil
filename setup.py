@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+from re import template
 from setuptools import setup, find_packages
 import distutils.dir_util
 
@@ -10,12 +11,13 @@ def list_files(directory):
     for path, directories, filenames in os.walk(directory):
         for filename in filenames:
             paths.append(os.path.join(path, filename))
+    # print(path)
     return paths
 
 
 setup(
     name="hdcutil",
-    version="0.2.4",
+    version="0.2.6",
     author="attapon.th",
     maintainer="attapon.th",
     maintainer_email="attapon.4work@gmial.com",
@@ -32,10 +34,12 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
     ],
-    # entry_points={
-    #     "console_scripts": ["mercury=mercury.mercury:main"],
-    # },
-    # package_data={"hdcutil": list_files("hdcutil")},
+    entry_points={
+        "console_scripts": ["hdcli=hdcli:cli"],
+    },
+    py_modules=["hdcli"],
+    # data_files=[('', list_files("hdcutil/template"))],
+    package_data={"hdcutil": list_files("hdcutil")},
     # # package_data={"hdcutil": list_files("hdcutil") + ["requirements.txt"]},
-    # include_package_data=True,
+    include_package_data=True,
 )
