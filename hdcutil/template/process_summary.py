@@ -28,9 +28,11 @@ pd.set_option('display.max_columns', None)
 pd.set_option('use_inf_as_na', True)
 
 
+__processing_time__ = datetime.now()
+
 # %%
 ## for global variables
-DEV_MODE: bool = os.environ.get("DEV", "True").title() == "True"
+DEV_MODE: bool = os.environ.get("DEV", "False").title() == "True"
 _PROVINCE_CODE: str = os.environ.get("PROVINCE_CODE", "")
 
 _CONFIG_FILE: str = os.environ.get("CONFIG_FILE", "./config.ini")
@@ -90,10 +92,14 @@ def verify_df(df: DataFrame)-> bool:
     if not "AREACODE" in col:
         return False
     return True
-    
+
+# os.error
+class DataFrameEmpty(Exception):
+    def __init__(self, message="Dataframe is empty."):
+        self.message = message
+        super().__init__(self.message)
 
 # set variables
-ErrDataframeEmpty = Exception("Dataframe is empty.")
 budget_year:str = str(_BUDGET_YEAR)
 process_date: str = _PROCESS_DATE
 province_code:str = _PROVINCE_CODE
@@ -119,8 +125,9 @@ len_hospcode: int = len(list_hospcode)
 pqwr: ParquetWR = ParquetWR(path_tmpdb(output_filename, '_all_', budget_year))
 for i, hospcode in enumerate(list_hospcode):
     i += 1
-    percent = ceil((i / len_hospcode) * 100)
-    print(f"{percent}%")
+    _start_procsss_dt = datetime.now()
+    percent = ceil((i / len_hospcode) * 90)
+    st_procss = datetime.now()
     try:
         # print("Starting procass hospcode: ", hospcode, f"{i}/{len(list_hospcode)}")
         
@@ -137,46 +144,56 @@ for i, hospcode in enumerate(list_hospcode):
 
         # if process successful
         if isinstance(df, DataFrame) and not df.empty:
-            msg: str = f"Success {hospcode:05} - {len(df):10,} - timestamp: {datetime.now().isoformat()}"
+            delta = datetime.now() - _start_procsss_dt
+            msg: str = f"[{datetime.now().isoformat():26}][{str(delta):14}][{hospcode:05}] Success "
             print(msg)
+            print(f"{percent}%")
             process_summary.append(msg)
 
-    except Exception as e:
-        if not str(e) == str(ERR_IS_DATAFRAME_EMPTY):
-            print("Error processing hospital: {} - {}".format(hospcode, str(e)))
-            process_error.append(f"{hospcode} - {e}")
 
-## close ParquetWR
+    except DataFrameEmpty:
+        continue
+
+    except Exception as e:
+        delta = datetime.now() - _start_procsss_dt
+        msg = f"[{datetime.now().isoformat():26}][{str(delta):14}][{hospcode:05}] Error: {str(e)}"
+        print(msg)
+        process_error.append(msg)
 pqwr.close()        
 
 print("\n------")
 
-
+print("92%")
 
 # %% [markdown]
 # ## Print Summary process
 
 # %%
-print("Summary")
+print("Summary:", len(process_summary))
+print("\n------")
 for line in process_summary:
     print(line)
 print("\n------")
-print("Error")
+print("Error:", len(process_error))
+print("\n------")
 if len(process_error) == 0:
     print("No error")
 else:
     for line in process_error:
         print(line)
-print("Finish.")
-print("100%")
+print("\n------")
+print("95%")
 
 
 filepath = path_tmpdb(output_filename, '_all_', budget_year)
 if not os.path.exists(filepath):
     raise Exception("File not found: ", filepath)
-
+print("98%")
 df:DataFrame = read_tmpdb_all(output_filename, budget_year)
 print("Filename:", output_filename)
 print("Columns:", ",".join(df.columns.tolist()))
 print("Filesize: {:.2f} MB".format(os.stat(filepath).st_size / 1024 / 1024))
-print(f"Total: {len(df):,}")
+print(f"Recordtotal: {len(df):,}")
+print("ProcssedTime:", datetime.now() - __processing_time__)
+
+print("100%")

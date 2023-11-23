@@ -41,11 +41,26 @@ def buildall(dir:str , directory:str, clear: bool = False):
         if clear:
             click.echo("Clear directory output")
             build_process.remove_all(directory)
-        ss = [sys.executable, sys.argv[0], "build" , "-d", directory]
+        # ss = [sys.executable, sys.argv[0], "build" , "-d", directory]
+        os.makedirs(directory, exist_ok=True)
         for root, dirs, files in os.walk(dir):
             for file in files:
                 if file.endswith(".ipynb"):
-                    os.system(" ".join(ss + [os.path.join(root, file)]))
+                    # os.system(" ".join(ss + [os.path.join(root, file)]))
+                    filename = os.path.join(root, file)
+                    s:str = build_process.build(filename=filename)
+                    name: str = os.path.basename(filename)
+                    if s != "":
+                        path: str = os.path.join(directory, name.split(".ipynb")[0] + ".py")
+                        with open(path, "w+") as f:
+                            f.write(s)
+                    else:
+                        print(f"Error: {name}", file=sys.stderr)
+                        continue
+                        # sys.exit(1)
+                    print(f"Success: build process success, file: {name}", file=sys.stderr)
+
+
 
 cli.add_command(build)
 cli.add_command(buildall)
