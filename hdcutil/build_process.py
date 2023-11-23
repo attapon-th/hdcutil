@@ -10,7 +10,7 @@ __IGNORED_PARAMETERS__ = [
     "budget_ended_date",
     "province_code",
     "hospcode",
-    "ErrDataframeEmpty"
+    "DataframeEmpty"
 ]
 
 def build(filename: str,) -> str:
@@ -40,8 +40,11 @@ def build(filename: str,) -> str:
 
 
 def get_template_lines() -> list[str]:
-    base_dir: str = os.path.dirname(os.path.abspath(__file__))
-    with open(base_dir +"/template/process_summary.py", "r") as f:
+    template_file: str = os.getenv("TEMPLATE_PROCESS_SUMMARY", "")
+    if template_file == "":
+        base_dir: str = os.path.dirname(os.path.abspath(__file__))
+        template_file = base_dir + "/template/process_summary.py"
+    with open(template_file, "r") as f:
         return f.readlines()
 
 
@@ -88,7 +91,7 @@ def filter_parameter(parameters: list, name: str):
             continue
         params.append(param)
     if is_output_filename == False:
-        params.append(f"output_filename: str = '{name}'\n")
+        params.append(f"\noutput_filename: str = '{name}'\n")
     return params
 
 

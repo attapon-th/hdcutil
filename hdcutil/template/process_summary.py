@@ -68,6 +68,7 @@ def fill_column(df: DataFrame ) -> DataFrame:
         elif "HCODE" in col:
             df = df.rename(columns={"HCODE": "HOSPCODE"})
     # remove field
+    col = df.columns.to_list()
     if "VHID" in col:
         df = df.drop(columns=["VHID"])
     if "HAREA" in col:
@@ -101,15 +102,20 @@ class DataFrameEmpty(Exception):
 
 # set variables
 budget_year:str = str(_BUDGET_YEAR)
+b_year: int = int(_BUDGET_YEAR)
 process_date: str = _PROCESS_DATE
 province_code:str = _PROVINCE_CODE
-budget_start_date = date(int(budget_year) - 1, 10, 1)
-budget_ended_date = date(int(budget_year), 9, 30)
+b_date_start = date(int(budget_year) - 1, 10, 1)
+b_date_end = date(int(budget_year), 9, 30)
 
 output_filename: str = "filename_not_define"
+
 # ---
+
 __PYSCRIPT_PARAMETERS__ = None
+
 # --- 
+
 
 
 # procssing variables
@@ -117,12 +123,14 @@ process_summary = []
 process_error = []
 
 # list hospcode
-df_hospital: DataFrame = read_lookup("chospital")
-list_hospcode:list[str]= df_hospital.loc[(df_hospital["CHW_CODE"] == province_code), "HOSCODE"].tolist()
+df_hospital: DataFrame = read_lookup("chospital", columns=["STATUS", "HOSPCODE", "CHW_CODE"])
+list_hospcode:list[str]= df_hospital.loc[(df_hospital["STATUS"] == 1) & (df_hospital["CHW_CODE"] == province_code), "HOSPCODE"].tolist() 
 len_hospcode: int = len(list_hospcode)
 
 ## with write parquet one file 
-pqwr: ParquetWR = ParquetWR(path_tmpdb(output_filename, '_all_', budget_year))
+
+_pathfile = path_tmpdb(output_filename, '_all_', budget_year)
+_result_dfs: list[DataFrame] = []
 for i, hospcode in enumerate(list_hospcode):
     i += 1
     _start_procsss_dt = datetime.now()
@@ -135,12 +143,10 @@ for i, hospcode in enumerate(list_hospcode):
         df: DataFrame = DataFrame()
         
         # ----
+        
         __PROCESSING_CODE__: str = ""
+
         # ----
-        df = fill_column(df)
-        if not verify_df(df):
-            raise Exception("Dataframe is not correct.")
-        pqwr.write(df)
 
         # if process successful
         if isinstance(df, DataFrame) and not df.empty:
@@ -149,6 +155,7 @@ for i, hospcode in enumerate(list_hospcode):
             print(msg)
             print(f"{percent}%")
             process_summary.append(msg)
+        _result_dfs.append(df.copy())
 
 
     except DataFrameEmpty:
@@ -159,9 +166,16 @@ for i, hospcode in enumerate(list_hospcode):
         msg = f"[{datetime.now().isoformat():26}][{str(delta):14}][{hospcode:05}] Error: {str(e)}"
         print(msg)
         process_error.append(msg)
-pqwr.close()        
 
-print("\n------")
+df = pd.concat(_result_dfs, ignore_index=True)
+df = fill_column(df)
+if not verify_df(df):
+    raise Exception("Dataframe is not correct.")
+pqwr: ParquetWR = ParquetWR(_pathfile)
+pqwr.write(df)
+pqwr.close()
+
+# print("\n------")
 
 print("92%")
 
@@ -170,18 +184,18 @@ print("92%")
 
 # %%
 print("Summary:", len(process_summary))
-print("\n------")
-for line in process_summary:
-    print(line)
-print("\n------")
+# print("\n------")
+# for line in process_summary:
+#     print(line)
+# print("\n------")
 print("Error:", len(process_error))
-print("\n------")
-if len(process_error) == 0:
-    print("No error")
-else:
-    for line in process_error:
-        print(line)
-print("\n------")
+# print("\n------")
+# if len(process_error) == 0:
+#     print("No error")
+# else:
+#     for line in process_error:
+#         print(line)
+# print("\n------")
 print("95%")
 
 
