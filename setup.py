@@ -17,13 +17,13 @@ def list_files(directory):
 
 setup(
     name="hdcutil",
-    version="0.2.8",
+    version="0.2.9",
     author="attapon.th",
     maintainer="attapon.th",
     maintainer_email="attapon.4work@gmial.com",
     # long_description=long_description,
     # long_description_content_type="text/markdown",
-    # install_requires=open("requirements.txt").readlines(),
+    install_requires=open("requirements.txt").readlines(),
     packages=find_packages(),
     python_requires=">=3.8",
     classifiers=[

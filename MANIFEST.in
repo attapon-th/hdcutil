@@ -1,1 +1,2 @@
 recursive-include hdcutil/template/ *
+include requirements.txt

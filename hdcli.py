@@ -7,6 +7,7 @@ import click
 import sys
 import os
 from hdcutil import build_process
+from glob import glob
 
 @click.group()
 def cli():
@@ -62,9 +63,20 @@ def buildall(dir:str , directory:str, template: str = "by_hospcode", clear: bool
                         # sys.exit(1)
                     print(f"Success: build process success, file: {name}", file=sys.stderr)
 
+@click.command("run")
+@click.argument('file-glob')
+def run(file_glob:str):
+    for file in glob(file_glob):
+        print(file)
+        os.system(f"python {file}")
+        print("Done.", file=sys.stderr)
+        sys.exit(0)
+    print("file not found.", file=sys.stderr)
+    sys.exit(1)
 
 
 cli.add_command(build)
 cli.add_command(buildall)
+cli.add_command(run)
 if __name__ == '__main__':
     cli()
