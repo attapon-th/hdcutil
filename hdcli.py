@@ -66,13 +66,15 @@ def buildall(dir:str , directory:str, template: str = "by_hospcode", clear: bool
 @click.command("run")
 @click.argument('file-glob')
 def run(file_glob:str):
-    for file in glob(file_glob):
+    files: list[str] = glob(file_glob)
+    if len(files) == 0:
+        print("file not found.", file=sys.stderr)
+        sys.exit(1)
+    for file in files:
         print(file)
         os.system(f"python {file}")
         print("Done.", file=sys.stderr)
-        sys.exit(0)
-    print("file not found.", file=sys.stderr)
-    sys.exit(1)
+    sys.exit(0)
 
 
 cli.add_command(build)
