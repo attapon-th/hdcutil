@@ -12,6 +12,7 @@ from .tmpdb import (
 )
 from .dateutil import datediff
 from .ParquetWriter import ParquetWR
+from .errors import ErrorDataFrameEmpty, dataframe_empty
 
 __all__ = [
     "config",
@@ -30,4 +31,6 @@ __all__ = [
     "df_trim_space",
     "datediff",
     "ParquetWR",
+    "ErrorDataFrameEmpty",
+    "dataframe_empty",
 ]

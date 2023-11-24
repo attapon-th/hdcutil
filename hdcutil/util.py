@@ -62,7 +62,7 @@ def read_lookup(name: str, *, columns: list[str] = None) -> DataFrame:
         columns (list[str]): list of columns (default: None)
 
     Returns:
-        df (DataFrame): DataFrame of lookup
+        df (DataFrame): DataFrame of lookup if erorr return dataframe is empty
     """
     conf = get_conf()
     s3_obj = dict(conf.items("s3_lookup"))
@@ -88,6 +88,7 @@ def read_lookup(name: str, *, columns: list[str] = None) -> DataFrame:
 def df_trim_space(df: DataFrame) -> DataFrame:
     """
     Trim space in string column
+
 
     Args:
         df (DataFrame): DataFrame

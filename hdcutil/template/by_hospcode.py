@@ -5,6 +5,7 @@ import numpy as np
 import pyarrow as pa
 from math import ceil
 from glob import glob
+import json
 
 from datetime import datetime, date
 from pandas import DataFrame, Series, Index
@@ -13,13 +14,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
 
-
 from hdcutil import (
     get_conf, conf_s3,
     path_tmpdb, get_budget_year,
     read_lookup, read_tmpdb, read_person_db, read_person_cid, read_tmpdb_all,
     datediff, ParquetWR,
-    check_mod11, df_trim_space
+    check_mod11, df_trim_space,
+    ErrorDataFrameEmpty, dataframe_empty
 )
 
 import warnings
@@ -97,7 +98,7 @@ def verify_df(df: DataFrame)-> bool:
 # os.error
 class DataFrameEmpty(Exception):
     def __init__(self, message="Dataframe is empty."):
-        self.message = message
+        self.message: str = message
         super().__init__(self.message)
 
 # set variables
@@ -133,11 +134,10 @@ _pathfile = path_tmpdb(output_filename, '_all_', budget_year)
 _result_dfs: list[DataFrame] = []
 for i, hospcode in enumerate(list_hospcode):
     i += 1
-    _start_procsss_dt = datetime.now()
-    percent = ceil((i / len_hospcode) * 90)
-    st_procss = datetime.now()
+    _start_procsss_dt: datetime = datetime.now()
+    percent: int = ceil((i / len_hospcode) * 90)
+    st_procss: datetime = datetime.now()
     try:
-        # print("Starting procass hospcode: ", hospcode, f"{i}/{len(list_hospcode)}")
         
         # processing operation
         df: DataFrame = DataFrame()
@@ -145,7 +145,7 @@ for i, hospcode in enumerate(list_hospcode):
         # ----
         
         __PROCESSING_CODE__: str = ""
-
+        
         # ----
 
         # if process successful
@@ -157,10 +157,10 @@ for i, hospcode in enumerate(list_hospcode):
             process_summary.append(msg)
         _result_dfs.append(df.copy())
 
-
     except DataFrameEmpty:
         continue
-
+    except ErrorDataFrameEmpty:
+        continue
     except Exception as e:
         delta = datetime.now() - _start_procsss_dt
         msg = f"[{datetime.now().isoformat():26}][{str(delta):14}][{hospcode:05}] Error: {str(e)}"
@@ -175,39 +175,31 @@ pqwr: ParquetWR = ParquetWR(_pathfile)
 pqwr.write(df)
 pqwr.close()
 
-# print("\n------")
 
 print("92%")
 
-# %% [markdown]
-# ## Print Summary process
+print("------------ Summary Processing -------------")
 
-# %%
 print("Summary:", len(process_summary))
-# print("\n------")
-# for line in process_summary:
-#     print(line)
-# print("\n------")
+print("SummaryDetail:", json.dumps(process_summary))
 print("Error:", len(process_error))
-# print("\n------")
-# if len(process_error) == 0:
-#     print("No error")
-# else:
-#     for line in process_error:
-#         print(line)
-# print("\n------")
-print("95%")
+print("ErrorDetail:", json.dumps(process_error))
 
 
-filepath = path_tmpdb(output_filename, '_all_', budget_year)
+
+filepath: str = path_tmpdb(output_filename, '_all_', budget_year)
 if not os.path.exists(filepath):
     raise Exception("File not found: ", filepath)
-print("98%")
 df:DataFrame = read_tmpdb_all(output_filename, budget_year)
+
+print("ProcessDate:", process_date)
+print("ProcessTimestamp:", __processing_time__.isoformat())
+print("ProvinceCode:", province_code)
+print("BudgetYear:", budget_year)
 print("Filename:", output_filename)
+print("Filesize:", "{:.2f}MB".format(os.stat(filepath).st_size / 1024 / 1024))
 print("Columns:", ",".join(df.columns.tolist()))
-print("Filesize: {:.2f} MB".format(os.stat(filepath).st_size / 1024 / 1024))
-print(f"Recordtotal: {len(df):,}")
+print("Recordtotal:", f"{len(df):,}")
 print("ProcssedTime:", datetime.now() - __processing_time__)
 
 print("100%")

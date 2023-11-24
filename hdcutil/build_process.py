@@ -6,14 +6,17 @@ from click import FileError
 
 __IGNORED_PARAMETERS__ = [
     "budget_year",
+    "b_year",
     "budget_start_date",
     "budget_ended_date",
+    "b_date_start",
+    "b_date_end",
     "province_code",
     "hospcode",
     "DataframeEmpty"
 ]
 
-def build(filename: str,) -> str:
+def build(filename: str, *, template_name: str = "by_hospcode") -> str:
     jpy:dict = read_ipynb(filename)
     name:str = filename.split(".ipynb")[0]
     name = os.path.basename(name)
@@ -33,17 +36,17 @@ def build(filename: str,) -> str:
     # if len(data["parameters"]) == 0:
 
     data["parameters"] = filter_parameter(data["parameters"], name)
-    template: list[str] = get_template_lines()
+    template: list[str] = get_template_lines(template_name)
     pyscript:str = format_template(template, data)
     return pyscript
     
 
 
-def get_template_lines() -> list[str]:
-    template_file: str = os.getenv("TEMPLATE_PROCESS_SUMMARY", "")
-    if template_file == "":
-        base_dir: str = os.path.dirname(os.path.abspath(__file__))
-        template_file = base_dir + "/template/process_summary.py"
+def get_template_lines(template_name: str = "by_hospcode") -> list[str]:
+    base_dir: str = os.path.dirname(os.path.abspath(__file__))
+    template_file: str = base_dir + f"/template/{template_name}.py"
+    if os.path.exists(template_file) == False:
+        template_file: str = base_dir + "/template/by_hospcode.py"
     with open(template_file, "r") as f:
         return f.readlines()
 
@@ -58,23 +61,33 @@ def format_template(template: list[str], data: dict) -> str:
     s:str = ""
     for l in template:
         if  "__PYSCRIPT_PARAMETERS__" in l:
-            params:list[str] = data["parameters"]
-            p:str = "".join(params)
-            l:str = p
+            l += "\n"
+            pos_index:int = l.index("__PYSCRIPT_PARAMETERS__")
+            spaces:str = ""
+            if pos_index > 0: 
+                spaces:str =  l[:pos_index]
+            l += format_lines(data["parameters"], spaces)
             l += "\n"
         if "__PROCESSING_CODE__" in l:
-            code:list[str] = data["process"]
+            l += "\n"
             pos_index:int = l.index("__PROCESSING_CODE__")
             spaces:str = ""
             if pos_index > 0: 
                 spaces:str =  l[:pos_index]
-            l:str = spaces + spaces.join(code)
+            l += format_lines(data["process"], spaces)
             l += "\n"
             
         s = s + l
     return s
 
-
+def format_lines(list_line: list[str], spaces: str =  "") -> str:
+    l: str = ""
+    for line in list_line:
+        l += spaces + line
+        if not line.endswith("\n"):
+            l += "\n"
+    l += "\n"
+    return l
 
 
 def filter_parameter(parameters: list, name: str):
