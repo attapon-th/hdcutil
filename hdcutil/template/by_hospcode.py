@@ -1,4 +1,5 @@
 
+from calendar import c
 import os
 import pandas as pd
 import numpy as np
@@ -130,12 +131,12 @@ len_hospcode: int = len(list_hospcode)
 
 ## with write parquet one file 
 
-_pathfile = path_tmpdb(output_filename, '_all_', budget_year)
+_pathfile: str = path_tmpdb(output_filename, '_all_', budget_year)
 _result_dfs: list[DataFrame] = []
+percent: int = 0
 for i, hospcode in enumerate(list_hospcode):
     i += 1
     _start_procsss_dt: datetime = datetime.now()
-    percent: int = ceil((i / len_hospcode) * 90)
     st_procss: datetime = datetime.now()
     try:
         
@@ -153,7 +154,9 @@ for i, hospcode in enumerate(list_hospcode):
             delta = datetime.now() - _start_procsss_dt
             msg: str = f"[{datetime.now().isoformat():26}][{str(delta):14}][{hospcode:05}] Success "
             print(msg)
-            print(f"{percent}%")
+            if ceil((i / len_hospcode) * 90) != percent:
+                percent: int = ceil((i / len_hospcode) * 90)
+                print(f"{percent}%")
             process_summary.append(msg)
         _result_dfs.append(df.copy())
 
@@ -180,11 +183,10 @@ print("92%")
 
 print("------------ Summary Processing -------------")
 
-print("Summary:", len(process_summary))
 print("SummaryDetail:", json.dumps(process_summary))
-print("Error:", len(process_error))
 print("ErrorDetail:", json.dumps(process_error))
-
+print("Summary:", len(process_summary))
+print("Error:", len(process_error))
 
 
 filepath: str = path_tmpdb(output_filename, '_all_', budget_year)
