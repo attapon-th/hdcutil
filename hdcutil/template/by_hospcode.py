@@ -1,4 +1,3 @@
-
 from calendar import c
 import os
 import pandas as pd
@@ -16,44 +15,51 @@ from sqlalchemy.engine import Engine
 
 
 from hdcutil import (
-    get_conf, conf_s3,
-    path_tmpdb, get_budget_year,
-    read_lookup, read_tmpdb, read_person_db, read_person_cid, read_tmpdb_all,
-    datediff, ParquetWR,
-    check_mod11, df_trim_space,
-    ErrorDataFrameEmpty, dataframe_empty
+    get_conf,
+    get_conf_url,
+    conf_s3,
+    path_tmpdb,
+    get_budget_year,
+    read_lookup,
+    read_tmpdb,
+    read_person_db,
+    read_person_cid,
+    read_tmpdb_all,
+    datediff,
+    ParquetWR,
+    check_mod11,
+    df_trim_space,
+    ErrorDataFrameEmpty,
+    dataframe_empty,
 )
 
 import warnings
-warnings.filterwarnings('ignore')
-pd.set_option('display.max_columns', None)
-pd.set_option('use_inf_as_na', True)
+
+warnings.filterwarnings("ignore")
+pd.set_option("display.max_columns", None)
+pd.set_option("use_inf_as_na", True)
 
 
 __processing_time__ = datetime.now()
 
 # %%
 ## for global variables
-DEV_MODE: bool = os.environ.get("DEV", "False").title() == "True"
 _PROVINCE_CODE: str = os.environ.get("PROVINCE_CODE", "")
-
-_CONFIG_FILE: str = os.environ.get("CONFIG_FILE", "./config.ini")
 _PROCESS_DATE: str = os.environ.get("PROCESS_DATE", date.today().isoformat())
-
-conf:ConfigParser = get_conf(_CONFIG_FILE, force=True)
+conf: ConfigParser = get_conf()
 if _PROVINCE_CODE == "":
-    _PROVINCE_CODE:str = conf.get("default", "province_code")
+    _PROVINCE_CODE: str = conf.get("default", "province_code")
 _BUDGET_YEAR: str = os.environ.get("BUDGET_YEAR", conf.get("default", "budget_year"))
 
-print(f"DEV_MODE: {DEV_MODE}")
-print(f"CONFIG_FILE: {_CONFIG_FILE}")
-print(f"PROVINCE_CODE: {_PROVINCE_CODE}")
-print(f"BUDGET_YEAR: {_BUDGET_YEAR}")
-print(f"PROCESS_DATE: {_PROCESS_DATE}")
+print(f"DEV_MODE: False")
+print(f"CONFIG_SECTIONS: {conf.sections()}")
+print(f"PROVINCE_CODE  : {_PROVINCE_CODE}")
+print(f"BUDGET_YEAR    : {_BUDGET_YEAR}")
+print(f"PROCESS_DATE   : {_PROCESS_DATE}")
 
 
-def fill_column(df: DataFrame ) -> DataFrame:
-    df.columns = [c.upper() for c in  df.columns]
+def fill_column(df: DataFrame) -> DataFrame:
+    df.columns = [c.upper() for c in df.columns]
     col: Index[str] = df.columns
     if not "AREACODE" in col:
         if "VHID" in col:
@@ -76,16 +82,16 @@ def fill_column(df: DataFrame ) -> DataFrame:
     if "HAREA" in col:
         df = df.drop(columns=["HAREA"])
     # order column
-    cols:list[str] = ["HOSPCODE","AREACODE", "D_COM", "B_YEAR"]
+    cols: list[str] = ["HOSPCODE", "AREACODE", "D_COM", "B_YEAR"]
     cols += set(df.columns.to_list()).difference(cols)
     df.columns = cols
     return df
 
 
-def verify_df(df: DataFrame)-> bool:
+def verify_df(df: DataFrame) -> bool:
     if df.empty:
         return False
-    col :Index[str] = df.columns
+    col: Index[str] = df.columns
     if not "HOSPCODE" in col:
         return False
     if not "B_YEAR" in col:
@@ -96,17 +102,19 @@ def verify_df(df: DataFrame)-> bool:
         return False
     return True
 
+
 # os.error
 class DataFrameEmpty(Exception):
     def __init__(self, message="Dataframe is empty."):
         self.message: str = message
         super().__init__(self.message)
 
+
 # set variables
-budget_year:str = str(_BUDGET_YEAR)
+budget_year: str = str(_BUDGET_YEAR)
 b_year: int = int(_BUDGET_YEAR)
 process_date: str = _PROCESS_DATE
-province_code:str = _PROVINCE_CODE
+province_code: str = _PROVINCE_CODE
 b_date_start = date(int(budget_year) - 1, 10, 1)
 b_date_end = date(int(budget_year), 9, 30)
 
@@ -116,8 +124,7 @@ output_filename: str = "filename_not_define"
 
 __PYSCRIPT_PARAMETERS__ = None
 
-# --- 
-
+# ---
 
 
 # procssing variables
@@ -125,13 +132,18 @@ process_summary = []
 process_error = []
 
 # list hospcode
-df_hospital: DataFrame = read_lookup("chospital", columns=["STATUS", "HOSPCODE", "CHW_CODE"])
-list_hospcode:list[str]= df_hospital.loc[(df_hospital["STATUS"] == 1) & (df_hospital["CHW_CODE"] == province_code), "HOSPCODE"].tolist() 
+df_hospital: DataFrame = read_lookup(
+    "chospital", columns=["STATUS", "HOSPCODE", "CHW_CODE"]
+)
+list_hospcode: list[str] = df_hospital.loc[
+    (df_hospital["STATUS"] == 1) & (df_hospital["CHW_CODE"] == province_code),
+    "HOSPCODE",
+].tolist()
 len_hospcode: int = len(list_hospcode)
 
-## with write parquet one file 
+## with write parquet one file
 
-_pathfile: str = path_tmpdb(output_filename, '_all_', budget_year)
+_pathfile: str = path_tmpdb(output_filename, "_all_", budget_year)
 _result_dfs: list[DataFrame] = []
 percent: int = 0
 for i, hospcode in enumerate(list_hospcode):
@@ -139,24 +151,20 @@ for i, hospcode in enumerate(list_hospcode):
     _start_procsss_dt: datetime = datetime.now()
     st_procss: datetime = datetime.now()
     try:
-        
         # processing operation
         df: DataFrame = DataFrame()
-        
+
         # ----
-        
+
         __PROCESSING_CODE__: str = ""
-        
+
         # ----
 
         # if process successful
         if isinstance(df, DataFrame) and not df.empty:
             delta = datetime.now() - _start_procsss_dt
-            msg: str = f"[{datetime.now().isoformat():26}][{str(delta):14}][{hospcode:05}] Success "
+            msg: str = f"[{i:4}][{datetime.now().isoformat():26}][{str(delta):14}][{hospcode:05}] Success "
             print(msg)
-            if ceil((i / len_hospcode) * 90) != percent:
-                percent: int = ceil((i / len_hospcode) * 90)
-                print(f"{percent}%")
             process_summary.append(msg)
         _result_dfs.append(df.copy())
 
@@ -166,7 +174,7 @@ for i, hospcode in enumerate(list_hospcode):
         continue
     except Exception as e:
         delta = datetime.now() - _start_procsss_dt
-        msg = f"[{datetime.now().isoformat():26}][{str(delta):14}][{hospcode:05}] Error: {str(e)}"
+        msg = f"[{i:4}][{datetime.now().isoformat():26}][{str(delta):14}][{hospcode:05}] Error: {str(e)}"
         print(msg)
         process_error.append(msg)
 
@@ -179,8 +187,6 @@ pqwr.write(df)
 pqwr.close()
 
 
-print("92%")
-
 print("------------ Summary Processing -------------")
 
 print("SummaryDetail:", json.dumps(process_summary))
@@ -189,10 +195,10 @@ print("Summary:", len(process_summary))
 print("Error:", len(process_error))
 
 
-filepath: str = path_tmpdb(output_filename, '_all_', budget_year)
+filepath: str = path_tmpdb(output_filename, "_all_", budget_year)
 if not os.path.exists(filepath):
     raise Exception("File not found: ", filepath)
-df:DataFrame = read_tmpdb_all(output_filename, budget_year)
+df: DataFrame = read_tmpdb_all(output_filename, budget_year)
 
 print("ProcessDate:", process_date)
 print("ProcessTimestamp:", __processing_time__.isoformat())
@@ -201,7 +207,5 @@ print("BudgetYear:", budget_year)
 print("Filename:", output_filename)
 print("Filesize:", "{:.2f}MB".format(os.stat(filepath).st_size / 1024 / 1024))
 print("Columns:", ",".join(df.columns.tolist()))
-print("Recordtotal:", f"{len(df):,}")
-print("ProcssedTime:", datetime.now() - __processing_time__)
-
-print("100%")
+print("RecordTotal:", f"{len(df):,}")
+print("ProcessedTime:", datetime.now() - __processing_time__)

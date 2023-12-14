@@ -1,6 +1,5 @@
-
 from . import config, util, tmpdb, dateutil, ParquetWriter
-from .config import conf_s3, get_conf
+from .config import conf_s3, get_conf, get_conf_url
 from .util import get_budget_year, check_mod11, read_lookup, df_trim_space
 from .tmpdb import (
     path_tmpdb,
@@ -19,6 +18,7 @@ __all__ = [
     "util",
     "tmpdb" "conf_s3",
     "get_conf",
+    "get_conf_url",
     "get_budget_year",
     "check_mod11",
     "read_lookup",

@@ -1,13 +1,13 @@
 from __future__ import print_function, division, absolute_import
 from configparser import ConfigParser
 import os
+from requests import request, Request, Response
 
-DEFAULT_CONFIG_FILE = "./config.ini"
 
 __current_config: ConfigParser = None
 
 
-def get_conf(filepath: str = DEFAULT_CONFIG_FILE, force: bool = False) -> ConfigParser:
+def get_conf(filepath: str = "config.ini", force: bool = False) -> ConfigParser:
     """
     Read config.ini file and return ConfigParser object
 
@@ -19,18 +19,43 @@ def get_conf(filepath: str = DEFAULT_CONFIG_FILE, force: bool = False) -> Config
         conf (ConfigParser): ConfigParser object
     """
     global __current_config
-    if __current_config is not None:
+    if force == False and __current_config is not None:
         return __current_config
+
     filepath = os.environ.get("CONFIG_FILE", filepath)
-    if os.path.exists(filepath) is False:
-        raise FileNotFoundError(f"File not found: {filepath}")
-    conf = ConfigParser()
-    conf.read(filepath)
-    __current_config = conf
-    return conf
+    if os.path.exists(filepath):
+        conf = ConfigParser()
+        conf.read(filepath)
+        __current_config = conf
+        return conf
+    elif os.environ.get("CONFIG_URL"):
+        return get_conf_url(os.environ.get("CONFIG_URL"))
+
+    raise FileNotFoundError("config.ini file is not found")
 
 
-def conf_s3(section: str = "s3") -> [dict, str]:
+def get_conf_url(url: str) -> ConfigParser:
+    """
+    Read config.ini file from URL and return ConfigParser object
+
+    Args:
+        url (str): URL of config.ini file
+
+    Returns:
+        conf (ConfigParser): ConfigParser object
+    """
+    global __current_config
+    r: Response = request("GET", url, timeout=5)
+    if r.status_code == 200:
+        conf = ConfigParser()
+        conf.read_string(r.text)
+        __current_config = conf
+        return conf
+
+    raise FileNotFoundError(f"url[{url}] is not found")
+
+
+def conf_s3(section: str = "s3") -> dict:
     """
     Read S3 section of config.ini file and return dictionary of S3 credentials
 
@@ -38,10 +63,12 @@ def conf_s3(section: str = "s3") -> [dict, str]:
         conf (ConfigParser): ConfigParser object
 
     Returns:
-        s3 (dict): dictionary of S3 credentials
-        bucket (str): name of S3 bucket
+        s3 (dict): dictionary of S3 Config credentials
     """
     conf: ConfigParser = get_conf()
-    s3 = dict(conf[section])
-    bucket: str = s3.pop("bucket")
-    return s3, bucket
+    return dict(
+        anon=conf.getboolean(section, "anon"),
+        key=conf.get(section, "key"),
+        secret=conf.get(section, "secret"),
+        endpoint_url=conf.get(section, "endpoint_url"),
+    )

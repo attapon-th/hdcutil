@@ -64,7 +64,7 @@ def read_lookup(name: str, *, columns: list[str] = None) -> DataFrame:
     Returns:
         df (DataFrame): DataFrame of lookup if erorr return dataframe is empty
     """
-    conf = get_conf()
+    conf: ConfigParser = get_conf()
     s3_obj = dict(conf.items("s3_lookup"))
     bucket = s3_obj.pop("bucket").strip("/")
     prefix = s3_obj.pop("prefix").strip("/")
