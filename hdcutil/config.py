@@ -5,6 +5,7 @@ from requests import request, Request, Response
 
 
 __current_config: ConfigParser = None
+__hdc_schema: dict = None
 
 
 def get_conf(filepath: str = "config.ini", force: bool = False) -> ConfigParser:
@@ -29,12 +30,12 @@ def get_conf(filepath: str = "config.ini", force: bool = False) -> ConfigParser:
         __current_config = conf
         return conf
     elif os.environ.get("CONFIG_URL"):
-        return get_conf_url(os.environ.get("CONFIG_URL"))
+        return get_conf_url()
 
     raise FileNotFoundError("config.ini file is not found")
 
 
-def get_conf_url(url: str) -> ConfigParser:
+def get_conf_url() -> ConfigParser:
     """
     Read config.ini file from URL and return ConfigParser object
 
@@ -45,7 +46,17 @@ def get_conf_url(url: str) -> ConfigParser:
         conf (ConfigParser): ConfigParser object
     """
     global __current_config
-    r: Response = request("GET", url, timeout=5)
+    url: str | None = os.environ.get("CONFIG_URL")
+
+    r: Response = request(
+        "GET",
+        os.environ.get("CONFIG_URL"),
+        timeout=5,
+        allow_redirects=True,
+        headers={
+            "Authorization": "Basic {}".format(os.environ.get("CONFIG_BASIC_AUTH"))
+        },
+    )
     if r.status_code == 200:
         conf = ConfigParser()
         conf.read_string(r.text)
@@ -53,22 +64,3 @@ def get_conf_url(url: str) -> ConfigParser:
         return conf
 
     raise FileNotFoundError(f"url[{url}] is not found")
-
-
-def conf_s3(section: str = "s3") -> dict:
-    """
-    Read S3 section of config.ini file and return dictionary of S3 credentials
-
-    Args:
-        conf (ConfigParser): ConfigParser object
-
-    Returns:
-        s3 (dict): dictionary of S3 Config credentials
-    """
-    conf: ConfigParser = get_conf()
-    return dict(
-        anon=conf.getboolean(section, "anon"),
-        key=conf.get(section, "key"),
-        secret=conf.get(section, "secret"),
-        endpoint_url=conf.get(section, "endpoint_url"),
-    )
