@@ -90,8 +90,7 @@ def convert(file_glob, directory: str, clear: bool = False):
             for i, v in enumerate(jpy["cells"]):
                 if v["cell_type"] == "code":
                     f.write("".join(v["source"]))
-                else:
-                    f.write("\n")
+                f.write("\n")
 
 
 @click.command("run")
