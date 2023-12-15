@@ -17,7 +17,6 @@ from sqlalchemy.engine import Engine
 from hdcutil import (
     get_conf,
     get_conf_url,
-    conf_s3,
     path_tmpdb,
     get_budget_year,
     read_lookup,
