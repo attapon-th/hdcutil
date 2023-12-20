@@ -5,7 +5,7 @@ import pandas as pd
 from pandas import DataFrame
 from .config import get_conf
 from .util import get_budget_year
-from typing import Union, Tuple, Optional, List
+from typing import Union, Optional, List
 from configparser import ConfigParser
 
 TypeYEAR = Union[str, int]
@@ -62,7 +62,7 @@ def read_tmpdb(
         df (DataFrame): DataFrame
     """
     path_file: str = path_tmpdb(prefix_name, hospcode, budget_year)
-    if os.path.exists(path_file) == False:
+    if os.path.exists(path_file) is False:
         return DataFrame()
     return pd.read_parquet(
         path_file, engine="pyarrow", dtype_backend="pyarrow", columns=columns
@@ -73,7 +73,7 @@ def read_tmpdb_all(
     prefix: str,
     budget_year: TypeYEAR = _today_budget_year,
     columns: TypeListStrOptional = None,
-) -> pd.DataFrame:
+) -> DataFrame:
     """
     Reads data from a temporary database file with a specified prefix and budget year.
 
@@ -87,7 +87,7 @@ def read_tmpdb_all(
 
     """
     conf: ConfigParser = get_conf()
-    if type(budget_year) is not str:
+    if isinstance(budget_year, int):
         budget_year = str(budget_year)
     file_path: str = path_tmpdb(prefix, "_all_", budget_year)
 
@@ -103,18 +103,24 @@ def read_tmpdb_all(
     list_files: list[str] = glob(search_pattern)
 
     if len(list_files) == 0:
-        return pd.DataFrame()
+        return DataFrame()
 
-    df: DataFrame = pd.concat(
-        [
+    dfs: list[DataFrame] = []
+    for file in list_files:
+        dfs.append(
             pd.read_parquet(
-                file, engine="pyarrow", dtype_backend="pyarrow", columns=columns
+                file,
+                engine="pyarrow",
+                dtype_backend="pyarrow",
+                columns=columns,
             )
-            for file in list_files
-        ],
+        )
+
+    return pd.concat(
+        dfs,
         ignore_index=True,
+        sort=False,
     )
-    return df
 
 
 def read_person_db(
@@ -159,7 +165,7 @@ def read_person_cid(
 
     """
     cols: TypeListStrOptional = columns
-    if not cols is None and "CK_CID" not in cols:
+    if cols is not None and "CK_CID" not in cols:
         cols.append("CK_CID")
     df = read_person_db(hospcode=hospcode, columns=cols, budget_year=budget_year)
     if df.empty:

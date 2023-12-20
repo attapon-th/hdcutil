@@ -1,10 +1,12 @@
-from __future__ import print_function, division, absolute_import
-from datetime import datetime, date
+from __future__ import absolute_import, division, print_function
+
+from datetime import date, datetime
 from typing import Union
-from pandas import Series
+
 import numpy as np
-import pyarrow as pa
 import pandas as pd
+import pyarrow as pa
+from pandas import Series
 
 _T_DATETIME = Union[Series, np.datetime64, date, datetime]
 

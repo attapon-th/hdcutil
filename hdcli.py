@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 
-from email.policy import default
-from http import client
 import click
 import sys
 import os
@@ -78,7 +76,7 @@ def buildall(
 @click.argument("file_glob")
 @click.option("--directory", "-d", default="./toutput", help="Directory output")
 @click.option("--clear", is_flag=True, help="Clear directory output")
-def convert(file_glob, directory: str, clear: bool = False):
+def convert(file_glob: str, directory: str, clear: bool = False):
     # print(file_glob)
     for filename in glob(file_glob):
         jpy: dict = build_process.read_ipynb(filename)

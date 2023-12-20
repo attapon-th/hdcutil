@@ -1,14 +1,11 @@
-from calendar import c
 import os
 import pandas as pd
-import numpy as np
-import pyarrow as pa
 from math import ceil
 from glob import glob
 import json
 
 from datetime import datetime, date
-from pandas import DataFrame, Series, Index
+from pandas import DataFrame, Index
 from configparser import ConfigParser
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine

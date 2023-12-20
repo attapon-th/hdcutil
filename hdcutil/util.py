@@ -1,11 +1,8 @@
 from __future__ import print_function, division, absolute_import
-from ast import List
-from datetime import datetime, date, time
+from datetime import datetime, date
 from typing import Any, Union, Optional, List
 import pandas as pd
-from pandas import DataFrame, Series
-import os
-import numpy as np
+from pandas import DataFrame
 from configparser import ConfigParser
 from .config import get_conf
 
@@ -82,7 +79,7 @@ def read_lookup(name: str, columns: Optional[List[str]] = None) -> DataFrame:
         )
         df.columns = df.columns.str.upper()
         return df
-    except Exception as e:
+    except Exception:
         return pd.DataFrame()
 
 

@@ -1,9 +1,8 @@
 from pandas import DataFrame
-from sqlalchemy import true
 
 
 class ErrorDataFrameEmpty(Exception):
-    def __init__(self, message="DataFrame is empty."):
+    def __init__(self, message: str = "DataFrame is empty."):
         self.message: str = message
         super().__init__(self.message)
 

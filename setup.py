@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 
 import os
-from re import template
 from setuptools import setup, find_packages
-import distutils.dir_util
 
 
-def list_files(directory):
-    paths = []
-    for path, directories, filenames in os.walk(directory):
+def list_files(directory: str) -> list[str]:
+    paths: list[str] = []
+    for path, _, filenames in os.walk(directory):
         for filename in filenames:
             paths.append(os.path.join(path, filename))
     # print(path)
@@ -17,7 +15,7 @@ def list_files(directory):
 
 setup(
     name="hdcutil",
-    version="0.3.0",
+    version="0.3.1",
     author="attapon.th",
     maintainer="attapon.th",
     maintainer_email="attapon.4work@gmial.com",

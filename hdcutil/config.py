@@ -1,11 +1,12 @@
 from __future__ import print_function, division, absolute_import
 from configparser import ConfigParser
 import os
-from requests import request, Request, Response
+from requests import request, Response
+from typing import Any
 
 
 __current_config: ConfigParser | None = None
-__hdc_schema: dict | None = None
+__hdc_schema: dict[str, Any] | None = None
 
 
 def get_conf(filepath: str = "config.ini", force: bool = False) -> ConfigParser:
@@ -20,7 +21,7 @@ def get_conf(filepath: str = "config.ini", force: bool = False) -> ConfigParser:
         conf (ConfigParser): ConfigParser object
     """
     global __current_config
-    if force == False and __current_config is not None:
+    if force is False and __current_config is not None:
         return __current_config
 
     filepath = os.environ.get("CONFIG_FILE", filepath)
