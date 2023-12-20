@@ -5,16 +5,19 @@ import pandas as pd
 from pandas import DataFrame
 from .config import get_conf
 from .util import get_budget_year
-from typing import Union, Tuple, Optional
+from typing import Union, Tuple, Optional, List
 from configparser import ConfigParser
 
-_T_YEAR = Union[str, int]
+TypeYEAR = Union[str, int]
+TypeListStr = List[str]
+TypeListStrOptional = Optional[List[str]]
+
 
 _today_budget_year: str = str(get_budget_year())
 
 
 def path_tmpdb(
-    prefix_name: str, hospcode: str, budget_year: _T_YEAR = _today_budget_year
+    prefix_name: str, hospcode: str, budget_year: TypeYEAR = _today_budget_year
 ) -> str:
     """
     Return path of {prefix_name}_{hospcode}_{budget_year}.parquet file
@@ -44,8 +47,8 @@ def path_tmpdb(
 def read_tmpdb(
     prefix_name: str,
     hospcode: str,
-    budget_year: _T_YEAR = _today_budget_year,
-    columns: list = None,
+    budget_year: TypeYEAR = _today_budget_year,
+    columns: TypeListStrOptional = None,
 ):
     """
     Read {prefix_name}_{hospcode}_{budget_year}.parquet file and return DataFrame
@@ -53,8 +56,8 @@ def read_tmpdb(
     Args:
         prefix_name (str): prefix name (ex. t_person_db)
         hospcode (str): hospcode
-        budget_year (str): budget year (default: current budget year)
-        columns (list): list of columns to read
+        budget_year (str | int): budget year (default: current budget year)
+        columns (list[str] | None): list of columns to read
     Returns:
         df (DataFrame): DataFrame
     """
@@ -68,8 +71,8 @@ def read_tmpdb(
 
 def read_tmpdb_all(
     prefix: str,
-    budget_year: _T_YEAR = _today_budget_year,
-    columns: list = None,
+    budget_year: TypeYEAR = _today_budget_year,
+    columns: TypeListStrOptional = None,
 ) -> pd.DataFrame:
     """
     Reads data from a temporary database file with a specified prefix and budget year.
@@ -83,34 +86,41 @@ def read_tmpdb_all(
         pd.DataFrame: The data read from the database file as a pandas DataFrame.
 
     """
-    conf = get_conf()
-    file_path = path_tmpdb(prefix, "_all_", budget_year)
+    conf: ConfigParser = get_conf()
+    if type(budget_year) is not str:
+        budget_year = str(budget_year)
+    file_path: str = path_tmpdb(prefix, "_all_", budget_year)
 
     if os.path.exists(file_path):
         return pd.read_parquet(
             file_path, engine="pyarrow", dtype_backend="pyarrow", columns=columns
         )
 
-    dir_storage = conf.get("storage", "tmpdb")
-    search_pattern = os.path.join(
+    dir_storage: str = conf.get("storage", "tmpdb")
+    search_pattern: str = os.path.join(
         dir_storage, budget_year, prefix, f"{prefix}_*_{budget_year}.parquet"
     )
-    list_files = glob(search_pattern)
-    df_list: list[DataFrame] = iter(
+    list_files: list[str] = glob(search_pattern)
+
+    if len(list_files) == 0:
+        return pd.DataFrame()
+
+    df: DataFrame = pd.concat(
         [
             pd.read_parquet(
                 file, engine="pyarrow", dtype_backend="pyarrow", columns=columns
             )
             for file in list_files
-        ]
+        ],
+        ignore_index=True,
     )
-    return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
+    return df
 
 
 def read_person_db(
     hospcode: str,
-    budget_year: Union[str, int] = _today_budget_year,
-    columns: list = None,
+    budget_year: TypeYEAR = _today_budget_year,
+    columns: TypeListStrOptional = None,
 ) -> DataFrame:
     """
     Read t_person_db_{hospcode}_{budget_year}.parquet file and return DataFrame
@@ -133,8 +143,8 @@ def read_person_db(
 
 def read_person_cid(
     hospcode: str,
-    budget_year: _T_YEAR = _today_budget_year,
-    columns: list = None,
+    budget_year: TypeYEAR = _today_budget_year,
+    columns: TypeListStrOptional = None,
 ) -> DataFrame:
     """
     Read t_person_db_{hospcode}_{budget_year}.parquet file and filter unique CID
@@ -148,13 +158,13 @@ def read_person_cid(
         df (DataFrame): DataFrame  with CID is unique
 
     """
-    cols = columns
+    cols: TypeListStrOptional = columns
     if not cols is None and "CK_CID" not in cols:
         cols.append("CK_CID")
     df = read_person_db(hospcode=hospcode, columns=cols, budget_year=budget_year)
     if df.empty:
         return df
     if columns is None:
-        columns = df.columns
-    df = df.loc[df["CK_CID"] > 0]
+        columns = df.columns.to_list()
+    df: DataFrame = df.loc[df["CK_CID"] > 0]
     return df[columns].copy()

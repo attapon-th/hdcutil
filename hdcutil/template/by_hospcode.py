@@ -25,7 +25,6 @@ from hdcutil import (
     read_person_cid,
     read_tmpdb_all,
     datediff,
-    ParquetWR,
     check_mod11,
     df_trim_space,
     ErrorDataFrameEmpty,
@@ -59,7 +58,7 @@ print(f"PROCESS_DATE   : {_PROCESS_DATE}")
 
 def fill_column(df: DataFrame) -> DataFrame:
     df.columns = [c.upper() for c in df.columns]
-    col: Index[str] = df.columns
+    col: list[str] = df.columns.to_list()
     if not "AREACODE" in col:
         if "VHID" in col:
             df = df.rename(columns={"VHID": "AREACODE"})
@@ -181,9 +180,8 @@ df = pd.concat(_result_dfs, ignore_index=True)
 df = fill_column(df)
 if not verify_df(df):
     raise Exception("Dataframe is not correct.")
-pqwr: ParquetWR = ParquetWR(_pathfile)
-pqwr.write(df)
-pqwr.close()
+
+df.to_parquet(_pathfile, engine="pyarrow", compression="snappy", index=False)
 
 
 print("------------ Summary Processing -------------")

@@ -1,6 +1,7 @@
 from __future__ import print_function, division, absolute_import
+from ast import List
 from datetime import datetime, date, time
-from typing import Union, Optional
+from typing import Any, Union, Optional, List
 import pandas as pd
 from pandas import DataFrame, Series
 import os
@@ -42,18 +43,18 @@ def check_mod11(cid: str) -> bool:
     ):  # ถ้า pid ไม่ใช่ 13 ให้คืนค่า False
         return False
 
-    cid12 = cid[0:12]  # ตัวเลขหลักที่ 1 - 12 ของบัตรประชาชน
-    cid13 = cid[12]  # ตัวเลขหลักที่ 13 ของบัตรประชาชน
+    cid12: str = cid[0:12]  # ตัวเลขหลักที่ 1 - 12 ของบัตรประชาชน
+    cid13: str = cid[12]  # ตัวเลขหลักที่ 13 ของบัตรประชาชน
     sum_num: int = 0  # ผลรวม
     for i, num in enumerate(cid12):  # วนลูปเช็คว่า pid มีตัวอักษรอยู่ในตำแหน่งไหน
         sum_num += int(num) * (13 - i)  # นำตัวเลขที่เจอมาคูณกับ 13 - i
 
-    digit13 = sum_num % 11  # หาเศษจากผลรวมที่ได้จากการคูณด้วย 11
+    digit13: int = sum_num % 11  # หาเศษจากผลรวมที่ได้จากการคูณด้วย 11
     digit13 = (11 - digit13) % 10
     return int(cid13) == digit13
 
 
-def read_lookup(name: str, *, columns: list[str] = None) -> DataFrame:
+def read_lookup(name: str, columns: Optional[List[str]] = None) -> DataFrame:
     """
     Read lookup file from s3
 
@@ -65,9 +66,9 @@ def read_lookup(name: str, *, columns: list[str] = None) -> DataFrame:
         df (DataFrame): DataFrame of lookup if erorr return dataframe is empty
     """
     conf: ConfigParser = get_conf()
-    s3_obj = dict(conf.items("s3_lookup"))
-    bucket = s3_obj.pop("bucket").strip("/")
-    prefix = s3_obj.pop("prefix").strip("/")
+    s3_obj: dict[str, Any] = dict(conf.items("s3_lookup"))
+    bucket: str = s3_obj.pop("bucket").strip("/")
+    prefix: str = s3_obj.pop("prefix").strip("/")
     s3_obj["anon"] = s3_obj["anon"].lower() == "true"
     s3_file: str = f"s3://{bucket}/{prefix}/{name}.parquet"
 

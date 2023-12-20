@@ -9,7 +9,6 @@ from .tmpdb import (
     read_tmpdb_all,
 )
 from .dateutil import datediff
-from .ParquetWriter import ParquetWR
 from .errors import ErrorDataFrameEmpty, dataframe_empty
 
 __all__ = [
@@ -26,10 +25,8 @@ __all__ = [
     "read_person_db",
     "read_person_cid",
     "read_tmpdb_all",
-    "to_parquet",
     "df_trim_space",
     "datediff",
-    "ParquetWR",
     "ErrorDataFrameEmpty",
     "dataframe_empty",
 ]

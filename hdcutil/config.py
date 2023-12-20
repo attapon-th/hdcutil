@@ -4,8 +4,8 @@ import os
 from requests import request, Request, Response
 
 
-__current_config: ConfigParser = None
-__hdc_schema: dict = None
+__current_config: ConfigParser | None = None
+__hdc_schema: dict | None = None
 
 
 def get_conf(filepath: str = "config.ini", force: bool = False) -> ConfigParser:
@@ -50,7 +50,7 @@ def get_conf_url() -> ConfigParser:
 
     r: Response = request(
         "GET",
-        os.environ.get("CONFIG_URL"),
+        os.environ.get("CONFIG_URL", ""),
         timeout=5,
         allow_redirects=True,
         headers={

@@ -23,4 +23,4 @@ def dataframe_empty(df: DataFrame, error: str = "raise") -> bool:
         if error == "raise":
             raise ErrorDataFrameEmpty()
         return False
-    return true
+    return True
