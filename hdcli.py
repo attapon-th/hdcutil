@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 
+from datetime import datetime, timedelta
 import click
 import sys
 import os
 from hdcutil import build_process
 from glob import glob
+from dacutil import worker
 
 
 @click.group()
@@ -14,71 +16,58 @@ def cli():
 
 
 @click.command()
-@click.argument("file", type=click.File("rb"))
+@click.argument("files", nargs=-1)
 @click.option("--directory", "-d", default="./output", help="Directory output")
 @click.option("--template", "-t", default="by_hospcode", help="Template name")
-def build(file, directory: str, template: str = "by_hospcode"):
-    filename = file.name
-    file.close()
-    s: str = build_process.build(filename=filename, template_name=template)
-    name: str = os.path.basename(filename)
-    if s != "":
-        os.makedirs(directory, exist_ok=True)
-        path: str = os.path.join(directory, name.split(".ipynb")[0] + ".py")
-        with open(path, "w+") as f:
-            f.write(s)
-    else:
-        print(f"Error: build process failed, file: {name}", file=sys.stderr)
+def build(files, directory: str, template: str = "by_hospcode"):
+    filenames = []
+    for filename in files:
+        # if our shell does not do filename globbing
+        expanded = list(glob(filename))
+        if len(expanded) == 0 and "*" not in filename:
+            raise (click.BadParameter("{}: file not found".format(filename)))
+        filenames.extend(expanded)
+    if len(filenames) == 0:
+        print("Error: no files found", file=sys.stderr)
         sys.exit(1)
-    print(f"Success: build process success, file: {name}", file=sys.stderr)
-    # output
-
-
-@click.command("build-all")
-@click.option("--directory", "-d", default="./output", help="Directory output")
-@click.option("--clear", is_flag=True, help="Clear directory output")
-@click.option("--template", "-t", default="by_hospcode", help="Template name")
-@click.argument("dir")
-def buildall(
-    dir: str, directory: str, template: str = "by_hospcode", clear: bool = False
-):
-    if os.path.exists(dir):
-        if clear:
-            click.echo("Clear directory output")
-            build_process.remove_all(directory)
-        # ss = [sys.executable, sys.argv[0], "build" , "-d", directory]
-        os.makedirs(directory, exist_ok=True)
-        for root, dirs, files in os.walk(dir):
-            for file in files:
-                if file.endswith(".ipynb"):
-                    # os.system(" ".join(ss + [os.path.join(root, file)]))
-                    filename = os.path.join(root, file)
-                    s: str = build_process.build(
-                        filename=filename, template_name=template
-                    )
-                    name: str = os.path.basename(filename)
-                    if s != "":
-                        path: str = os.path.join(
-                            directory, name.split(".ipynb")[0] + ".py"
-                        )
-                        with open(path, "w+") as f:
-                            f.write(s)
-                    else:
-                        print(f"Error: {name}", file=sys.stderr)
-                        continue
-                        # sys.exit(1)
-                    print(
-                        f"Success: build process success, file: {name}", file=sys.stderr
-                    )
+    os.makedirs(directory, exist_ok=True)
+    for filename in filenames:
+        if filename.endswith(".ipynb") is False:
+            print(f"not support file: {filename}", file=sys.stderr)
+            continue
+        s: str = build_process.build(filename=filename, template_name=template)
+        name: str = os.path.basename(filename)
+        if s != "":
+            path: str = os.path.join(directory, name.split(".ipynb")[0] + ".py")
+            with open(path, "w+") as f:
+                f.write(s)
+            print(f"Success: build process success, file: {path}", file=sys.stderr)
+        else:
+            print(f"Error: build process failed, file: {name}", file=sys.stderr)
+            sys.exit(1)
 
 
 @click.command("convert")
-@click.argument("file_glob")
+@click.argument("files", nargs=-1)
 @click.option("--directory", "-d", default="./toutput", help="Directory output")
 @click.option("--clear", is_flag=True, help="Clear directory output")
-def convert(file_glob: str, directory: str, clear: bool = False):
+def convert(files, directory: str, clear: bool = False):
     # print(file_glob)
-    for filename in glob(file_glob):
+    filenames = []
+    for filename in files:
+        # if our shell does not do filename globbing
+        expanded = list(glob(filename))
+        if len(expanded) == 0 and "*" not in filename:
+            raise (click.BadParameter("{}: file not found".format(filename)))
+        filenames.extend(expanded)
+    if len(filenames) == 0:
+        print("Error: no files found", file=sys.stderr)
+        sys.exit(1)
+
+    for filename in filenames:
+        if filename.endswith(".ipynb") is False:
+            print(f"not support file: {filename}", file=sys.stderr)
+            continue
         jpy: dict = build_process.read_ipynb(filename)
         name: str = filename.split(".ipynb")[0]
         name = os.path.basename(name)
@@ -87,26 +76,58 @@ def convert(file_glob: str, directory: str, clear: bool = False):
         with open(path, "w+") as f:
             for i, v in enumerate(jpy["cells"]):
                 if v["cell_type"] == "code":
-                    f.write("".join(v["source"]))
+                    sources = v["source"]
+                    for source in sources:
+                        if source.startswith("%"):
+                            source = "# " + source
+                        f.write(source)
                 f.write("\n")
+            print(f"Success: build process success, file: {path}", file=sys.stderr)
 
 
 @click.command("run")
-@click.argument("file-glob")
-def run(file_glob: str):
-    files: list[str] = glob(file_glob)
-    if len(files) == 0:
-        print("file not found.", file=sys.stderr)
+@click.argument("files", nargs=-1)
+@click.option("workers", "-w", default=1, help="Number of workers")
+def run(files, workers: int = 1):
+    filenames = []
+    for filename in files:
+        # if our shell does not do filename globbing
+        expanded = list(glob(filename))
+        if len(expanded) == 0 and "*" not in filename:
+            raise (click.BadParameter("{}: file not found".format(filename)))
+        filenames.extend(expanded)
+    if len(filenames) == 0:
+        print("Error: no files found", file=sys.stderr)
         sys.exit(1)
-    for file in files:
-        print(file)
-        os.system(f"python {file}")
-        print("Done.", file=sys.stderr)
+    if workers == 1:
+        for file in filenames:
+            executable_py(file)
+    else:
+        args = []
+        for file in filenames:
+            args.append({"filename": file})
+        worker(workers, executable_py, args)
+
     sys.exit(0)
 
 
+def executable_py(filename: str):
+    dt: datetime = datetime.now()
+    print(f"Starting Filename: {filename}", file=sys.stderr)
+    print(f"{sys.executable} {filename}", file=sys.stderr)
+    exit_code: int = os.system(f"{sys.executable} {filename}")
+
+    deltatime: timedelta = datetime.now() - dt
+    if exit_code == 0:
+        print(f"Done. Filename: {filename}, Dulation: {deltatime}", file=sys.stderr)
+    else:
+        print(
+            f"Failed[{exit_code}] Filename: {filename}, Dulation: {deltatime}",
+            file=sys.stderr,
+        )
+
+
 cli.add_command(build)
-cli.add_command(buildall)
 cli.add_command(run)
 cli.add_command(convert)
 if __name__ == "__main__":
