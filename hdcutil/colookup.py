@@ -120,11 +120,23 @@ class CoLookup:
 
     def get_chospital(
         self,
-        name: str = "chospital",
         province_code: Optional[str] = None,
+        name: str = "chospital",
         columns: Optional[List[str]] = None,
         ext: str = ".parquet",
     ) -> DataFrame:
+        """
+        Retrieves a DataFrame containing data from the 'chospital' table.
+
+        Args:
+            province_code (str, optional): The code of the province. Defaults to None.
+            name (str, optional): The name of the table. Defaults to "chospital".
+            columns (List[str], optional): The list of columns to retrieve. Defaults to None.
+            ext (str, optional): The file extension. Defaults to ".parquet".
+
+        Returns:
+            DataFrame: The DataFrame containing the retrieved data.
+        """
         if columns is not None and province_code is not None:
             columns.append("CHW_CODE")
         df = self.read_pq(name=name, columns=columns, ext=ext)
