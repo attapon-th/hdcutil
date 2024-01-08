@@ -20,8 +20,8 @@ def init_pandas_options():
     Returns:
     None
     """
-    set_option(pat="mode.copy_on_write", val=True)
-    set_option(pat="mode.use_inf_as_na", val=True)
+    set_option("copy_on_write", True)
+    set_option("use_inf_as_na", True)
 
 
 ALL_HOSPCODE = "__all__"
