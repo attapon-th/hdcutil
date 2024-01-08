@@ -24,7 +24,7 @@ def init_pandas_options():
     # set_option("use_inf_as_na", True)
 
 
-ALL_HOSPCODE = "__all__"
+ALL_HOSPCODE = "_all_"
 
 
 class HDCFiles:
@@ -44,7 +44,7 @@ class HDCFiles:
         """
         year = int(budget_year)
 
-        if year < 2020 or year > (date.today().year + 1):
+        if year < 2012 or year > (date.today().year + 1):
             raise Exception(f"Invalid budget year: {year}")
 
         if not os.path.exists(base_path):
@@ -76,9 +76,7 @@ class HDCFiles:
         if self.validate_hospcode(hospcode=hospcode) is False:
             warnings.warn(message="hospcode is not valid")
 
-        dir_storage: str = os.path.join(
-            self.BASE_PATH, hospcode, self.BUDGET_YEAR, pname
-        )
+        dir_storage: str = os.path.join(self.BASE_PATH, self.BUDGET_YEAR, pname)
         filename: str = f"{pname}_{hospcode}_{self.BUDGET_YEAR}.parquet"
         return os.path.join(dir_storage, filename)
 
