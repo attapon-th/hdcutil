@@ -12,7 +12,7 @@ def init_pandas_options():
 
     This function sets two options for the pandas library:
     - `mode.copy_on_write`: If set to `True`, enables copy-on-write support for pandas objects.
-    - `mode.use_inf_as_na`: If set to `True`, treats infinity as a missing value in pandas objects.
+    - (deprecated) `mode.use_inf_as_na`: If set to `True`, treats infinity as a missing value in pandas objects.
 
     Parameters:
     None
@@ -21,7 +21,7 @@ def init_pandas_options():
     None
     """
     set_option("copy_on_write", True)
-    set_option("use_inf_as_na", True)
+    # set_option("use_inf_as_na", True)
 
 
 ALL_HOSPCODE = "__all__"
