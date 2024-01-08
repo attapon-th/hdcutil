@@ -83,7 +83,7 @@ class CoLookup:
                 self.BASE_PATH: str = uri.replace(o.scheme + "://", "")
 
     def read_pq(
-        self, name: str, columns: Optional[List[str]] = None, ext: str = ".parqust"
+        self, name: str, columns: Optional[List[str]] = None, ext: str = ".parquet"
     ) -> DataFrame:
         """
         Reads a parquet file from the specified path and returns a DataFrame.
@@ -91,7 +91,7 @@ class CoLookup:
         Args:
             name (str): The name of the parquet file.
             columns (Optional[List[str]], optional): A list of column names to read from the parquet file. Defaults to None to read all columns.
-            ext (str, optional): The file extension of the parquet file. Defaults to ".parqust".
+            ext (str, optional): The file extension of the parquet file. Defaults to "parquet".
 
         Returns:
             DataFrame: The DataFrame read from the parquet file. if error return empty DataFrame
@@ -123,7 +123,7 @@ class CoLookup:
         name: str = "chospital",
         province_code: Optional[str] = None,
         columns: Optional[List[str]] = None,
-        ext: str = ".parqust",
+        ext: str = ".parquet",
     ) -> DataFrame:
         if columns is not None and province_code is not None:
             columns.append("CHW_CODE")
